@@ -1,10 +1,6 @@
 import pandas as pd
 import os
 
-# -----------------------------
-# Configuration
-# -----------------------------
-
 INPUT_FILE = "data/raw/sample.csv"
 OUTPUT_FILE = "output/processed.csv"
 
