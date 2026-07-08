@@ -67,3 +67,24 @@ Each Issue contains:
 - Assignee
 
 Issues are closed automatically when the Pull Request is merged.
+
+# Dataset Intake Validation
+
+Run:
+
+```bash
+python scripts/validate_intake.py
+```
+
+The validation script performs:
+
+- File existence check
+- Empty file check
+- File format validation
+- Schema validation
+- Encoding detection
+- Dataset statistics generation
+
+Output:
+
+output/intake_report.json
