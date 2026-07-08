@@ -6,3 +6,13 @@ This file will document our GitHub workflow.
 
 - Main branch contains stable code.
 - Feature branches are used for development.
+
+## Commit Messages
+
+Use:
+
+feat:
+fix:
+docs:
+refactor:
+chore:
