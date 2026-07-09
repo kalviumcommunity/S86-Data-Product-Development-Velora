@@ -1,0 +1,4 @@
+Loading data...
+Data successfully processed
+Rows processed: 5
+Output saved to output/processed.csv

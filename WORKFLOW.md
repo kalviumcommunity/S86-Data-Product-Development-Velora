@@ -68,6 +68,8 @@ Each Issue contains:
 
 Issues are closed automatically when the Pull Request is merged.
 
+---
+
 # Dataset Intake Validation
 
 Run:
@@ -88,3 +90,41 @@ The validation script performs:
 Output:
 
 output/intake_report.json
+
+---
+
+# Python Workflow
+
+## Running the Script
+
+```bash
+python scripts/data_workflow.py
+```
+
+## Workflow
+
+### ingest_data()
+
+Reads the raw customer support dataset from the CSV file.
+
+### process_data()
+
+- Removes duplicate records
+- Fills missing resolution times
+- Returns cleaned data
+
+### output_results()
+
+Saves the cleaned dataset into the output folder.
+
+## Using Another Dataset
+
+Replace
+
+```
+data/raw/sample.csv
+```
+
+with your new dataset.
+
+Keep the same column names for compatibility.
