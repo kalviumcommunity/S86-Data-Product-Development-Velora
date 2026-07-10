@@ -1,0 +1,22 @@
+{
+  "transaction_date": {
+    "from": "object",
+    "to": "datetime64[ns]",
+    "status": "success"
+  },
+  "signup_date": {
+    "from": "object",
+    "to": "datetime64[ns]",
+    "status": "success"
+  },
+  "amount": {
+    "from": "object",
+    "to": "float64",
+    "status": "success"
+  },
+  "is_active": {
+    "from": "int64",
+    "to": "bool",
+    "status": "success"
+  }
+}
