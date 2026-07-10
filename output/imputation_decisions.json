@@ -1,0 +1,34 @@
+{
+  "amount": {
+    "column_type": "numerical",
+    "null_count_before": 2,
+    "null_count_after": 0,
+    "strategy": "median_imputation",
+    "value_used": 275.0,
+    "business_reasoning": "Median represents a typical transaction and is resistant to high-value outliers.",
+    "risk_assessment": "Low to medium - imputed values are synthetic and must not be treated as observed values."
+  },
+  "category": {
+    "column_type": "categorical",
+    "null_count_before": 1,
+    "null_count_after": 0,
+    "strategy": "mode_imputation",
+    "business_reasoning": "The most frequent category is used because the column is categorical and cannot be meaningfully averaged.",
+    "risk_assessment": "Medium - mode imputation can increase the dominance of the most common category."
+  },
+  "last_updated": {
+    "column_type": "time_series",
+    "null_count_before": 2,
+    "null_count_after": 0,
+    "strategy": "forward_fill",
+    "business_reasoning": "The previous known timestamp is carried forward to preserve continuity in ordered data.",
+    "risk_assessment": "Medium - assumes the previous known state remains valid until a new observation appears."
+  },
+  "customer_id": {
+    "column_type": "critical_identifier",
+    "null_count_before": 1,
+    "strategy": "drop_rows",
+    "business_reasoning": "A missing customer_id cannot be safely guessed because identifiers must uniquely trace records.",
+    "risk_assessment": "Rows are lost, so the number and percentage of removed records must be documented."
+  }
+}
