@@ -1,0 +1,9 @@
+customer_id,total_transactions,days_as_customer,total_spent,days_since_last_purchase,purchase_count
+1,12,180,2400,10,12
+2,5,90,750,45,5
+3,20,365,5000,5,20
+4,2,30,200,80,2
+5,8,120,1600,20,8
+6,15,300,3500,15,15
+7,4,60,500,60,4
+8,25,450,7000,2,25
