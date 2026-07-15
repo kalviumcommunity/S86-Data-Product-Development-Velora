@@ -1,0 +1,12 @@
+Revenue Distribution Analysis:
+
+Skewness: 3.16 -> Highly right-skewed
+Mean: $5692
+Median: $775
+Interpretation: Most customers are small/mid-value; a few very large accounts pull the average up
+
+Kurtosis (Pearson): 13.00 -> Fat tails (outliers likely)
+Max: $50000
+Top 1%: $45608
+
+Business Action: Use separate playbooks for SMB vs enterprise/key accounts; track median and segment KPIs, not just mean

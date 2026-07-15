@@ -1,0 +1,51 @@
+{
+  "dataset": "B:\\BHANU\\sprint 1\\S86-Data-Product-Development-Velora\\data\\raw\\revenue_data.csv",
+  "row_count": 10,
+  "column": "revenue",
+  "mean": 5692.0,
+  "median": 775.0,
+  "skewness": 3.1613919019675776,
+  "kurtosis_pearson": 12.99587838994212,
+  "distribution_plot": "B:\\BHANU\\sprint 1\\S86-Data-Product-Development-Velora\\output\\revenue_distribution.png",
+  "abnormal_patterns": {
+    "describe": {
+      "count": 10.0,
+      "mean": 5692.0,
+      "std": 15569.410036635585,
+      "min": 500.0,
+      "25%": 662.5,
+      "50%": 775.0,
+      "75%": 880.0,
+      "max": 50000.0
+    },
+    "percentiles": {
+      "0.25": 662.5,
+      "0.5": 775.0,
+      "0.75": 880.0,
+      "0.9": 6079.999999999983,
+      "0.95": 28039.99999999995,
+      "0.99": 45608.00000000001
+    },
+    "gap_75_to_90": 5199.999999999983,
+    "iqr": 217.5,
+    "gap_ratio_vs_iqr": 23.908045977011415,
+    "hidden_segment_flag": true,
+    "hidden_segment_note": "Large jump from 75th to 90th percentile suggests a distinct high-value segment"
+  },
+  "segment_comparison": {
+    "q1_threshold": 662.5,
+    "q3_threshold": 880.0,
+    "high_value_metrics": {
+      "count": 3,
+      "mean": 17366.666666666668,
+      "median": 1200.0
+    },
+    "low_value_metrics": {
+      "count": 3,
+      "mean": 583.3333333333334,
+      "median": 600.0
+    },
+    "segment_plot": "B:\\BHANU\\sprint 1\\S86-Data-Product-Development-Velora\\output\\revenue_segment_distribution.png"
+  },
+  "business_interpretation": "Revenue Distribution Analysis:\n\nSkewness: 3.16 -> Highly right-skewed\nMean: $5692\nMedian: $775\nInterpretation: Most customers are small/mid-value; a few very large accounts pull the average up\n\nKurtosis (Pearson): 13.00 -> Fat tails (outliers likely)\nMax: $50000\nTop 1%: $45608\n\nBusiness Action: Use separate playbooks for SMB vs enterprise/key accounts; track median and segment KPIs, not just mean"
+}
