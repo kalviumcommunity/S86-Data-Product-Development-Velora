@@ -1,0 +1,11 @@
+{
+    "support_tickets <-> churn": {
+        "possible_directions": [
+            "Support tickets cause churn",
+            "Customers about to churn contact support",
+            "Customer frustration causes both"
+        ],
+        "most_likely": "Customer frustration is the underlying cause.",
+        "business_action": "Improve product quality rather than reducing support."
+    }
+}
