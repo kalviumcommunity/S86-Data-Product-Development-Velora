@@ -1,0 +1,21 @@
+TREND ANALYSIS
+
+Rolling Average Trend: UP
+Change over the last 30 days: 8.1%
+Latest month-over-month change: 1.2%
+Revenue volatility (std dev): 370
+
+Months with positive growth:
+- 2025-02: +2.2%
+- 2025-04: +87.8%
+- 2025-05: +16.3%
+- 2025-06: +1.2%
+
+Months with negative growth:
+- 2025-03: -29.4%
+
+Business Implications:
+The business is gaining momentum and the smoother trend suggests growth is not just daily noise.
+
+Recommended Action:
+Maintain the current growth strategy and scale the channels supporting recent demand.
