@@ -1,0 +1,11 @@
+customer_id,customer_type,lifetime_value,churn,support_tickets,retention_days
+1,Enterprise,150000,0,2,720
+2,Enterprise,140000,0,1,680
+3,Enterprise,160000,0,3,750
+4,SMB,9000,1,8,250
+5,SMB,8500,0,6,320
+6,SMB,7800,1,9,210
+7,Startup,2500,0,4,180
+8,Startup,2200,1,5,150
+9,Startup,1800,0,3,200
+10,Startup,2700,1,6,140

@@ -1,0 +1,17 @@
+
+SEGMENT STRATEGY SUMMARY
+
+Enterprise
+- Highest lifetime value
+- Lowest churn
+- Maintain premium support
+
+SMB
+- Medium value
+- Higher churn
+- Improve onboarding and customer support
+
+Startup
+- Lowest value
+- Moderate churn
+- Focus on education and self-service resources
