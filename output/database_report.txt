@@ -1,0 +1,11 @@
+Database Integration Completed Successfully
+
+Rows Loaded:
+   row_count
+0          5
+
+Customer Summary
+  customer_type  total_customers  avg_ltv
+0    Enterprise                2   5750.0
+1           SMB                2   1750.0
+2    Individual                1    700.0
