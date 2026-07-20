@@ -1,0 +1,20 @@
+
+HYPOTHESIS VALIDATION
+
+External Event
+--------------
+Stripe outage reported
+2025-01-15 11:15
+
+Internal Data
+-------------
+Stripe timeout begins
+2025-01-15 11:15
+
+Conclusion
+----------
+Timeline matches.
+
+Only credit cards affected.
+
+Root cause confirmed.
