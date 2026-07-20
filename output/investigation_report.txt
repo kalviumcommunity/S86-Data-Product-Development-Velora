@@ -1,0 +1,40 @@
+
+ROOT CAUSE INVESTIGATION REPORT
+
+Observation
+-----------
+Revenue dropped on 2025-01-15
+
+Problem Window
+--------------
+11:00 UTC
+
+Affected Segment
+----------------
+Payment Method : credit_card
+
+Dominant Error
+--------------
+Stripe API timeout
+
+Hypothesis
+----------
+Stripe payment gateway experienced an outage.
+
+Confidence
+----------
+HIGH
+
+Supporting Evidence
+-------------------
+• Failures only during one-hour window
+• Only credit card payments affected
+• Debit transactions successful
+• Same Stripe timeout error repeated
+
+Recommended Actions
+-------------------
+1. Add backup payment gateway
+2. Implement automatic failover
+3. Monitor payment API health
+4. Alert engineering team immediately

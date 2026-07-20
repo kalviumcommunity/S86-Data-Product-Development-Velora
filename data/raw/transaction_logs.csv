@@ -1,0 +1,11 @@
+timestamp,status,customer_type,payment_method,region,device_type,error_message,revenue
+2025-01-14 10:00:00,success,Enterprise,credit_card,North,Web,None,5000
+2025-01-14 11:00:00,success,SMB,debit,South,Mobile,None,1500
+2025-01-15 10:00:00,success,Startup,credit_card,East,Web,None,800
+2025-01-15 11:00:00,failed,Enterprise,credit_card,North,Web,Stripe API timeout,0
+2025-01-15 11:15:00,failed,SMB,credit_card,South,Mobile,Stripe API timeout,0
+2025-01-15 11:30:00,failed,Enterprise,credit_card,North,Web,Stripe API timeout,0
+2025-01-15 11:45:00,failed,SMB,credit_card,South,Mobile,Stripe API timeout,0
+2025-01-15 12:00:00,success,Startup,debit,East,Web,None,700
+2025-01-15 13:00:00,success,Enterprise,debit,North,Web,None,4800
+2025-01-16 10:00:00,success,Enterprise,credit_card,North,Web,None,5200
