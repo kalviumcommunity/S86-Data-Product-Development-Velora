@@ -1,0 +1,32 @@
+{
+  "monthly_active_users": {
+    "rows_returned": 7,
+    "total_active_users": 16,
+    "months_covered": [
+      "2026-07-01",
+      "2026-06-01",
+      "2026-05-01",
+      "2026-04-01",
+      "2026-03-01",
+      "2026-02-01",
+      "2026-01-01"
+    ]
+  },
+  "revenue_by_segment": {
+    "rows_returned": 14,
+    "total_revenue": 29935.0,
+    "segments": [
+      "Enterprise",
+      "SMB",
+      "Individual"
+    ]
+  },
+  "conversion_funnel": {
+    "rows_returned": 60,
+    "total_signups": 390,
+    "avg_conversion": 30.0,
+    "min_conversion": 12.5,
+    "max_conversion": 42.9
+  },
+  "validation": "passed"
+}
