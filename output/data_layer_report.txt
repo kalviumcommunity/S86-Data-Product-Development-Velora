@@ -1,0 +1,16 @@
+Views Created
+
+   customer_id customer_name     segment  order_count  revenue
+0            1         Alice  Enterprise            2      800
+1            2           Bob         SMB            1      700
+2            3       Charlie  Enterprise            1      600
+
+      segment  total_customers  average_order
+0  Enterprise                3     466.666667
+1         SMB                1     700.000000
+
+  aggregation_date    metric_name  metric_value  row_count           updated_at
+0       2024-04-01  total_revenue         500.0          1  2026-07-22 08:57:28
+1       2024-04-05  total_revenue         300.0          1  2026-07-22 08:57:28
+2       2024-04-08  total_revenue         700.0          1  2026-07-22 08:57:28
+3       2024-04-12  total_revenue         600.0          1  2026-07-22 08:57:28
