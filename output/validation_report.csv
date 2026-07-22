@@ -1,0 +1,4 @@
+Metric,SQL,Python,Difference,Pct_Difference,Tolerance,Status,Unit,Timestamp
+Active Users (30-day),80.0,80.0,0.0,0.0,0.0,PASS,users,2026-07-22 15:17:47
+Average Order Value,249.8,249.8,0.0,0.0,0.1,PASS,$,2026-07-22 15:17:47
+Monthly Customer Churn,36.0,36.0,0.0,0.0,0.0,PASS,customers,2026-07-22 15:17:47
