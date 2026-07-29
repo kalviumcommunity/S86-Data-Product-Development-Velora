@@ -238,6 +238,8 @@ c_aov.metric(
 import streamlit as st
  feature/streamlit-dashboard-shell
 import os
+import pandas as pd
+from pathlib import Path
 
 # -------------------------------------------------------
 # Page Configuration
@@ -247,6 +249,8 @@ st.set_page_config(
     page_icon="📊",
     layout="wide"
 )
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # -------------------------------------------------------
 # Sidebar Navigation
@@ -315,10 +319,10 @@ if page == "Overview":
 
     st.subheader("Revenue by Product Line")
 
-    chart_path = "output/chart1_revenue_by_product.png"
+    chart_path = BASE_DIR / "output" / "chart1_revenue_by_product.png"
 
-    if os.path.exists(chart_path):
-        st.image(chart_path, use_container_width=True)
+    if chart_path.exists():
+        st.image(str(chart_path), use_container_width=True)
     else:
         st.info("Revenue by Product chart will appear here.")
 
@@ -343,10 +347,10 @@ elif page == "Trends":
 
     st.subheader("Revenue Growth Over Time")
 
-    chart_path = "output/chart2_revenue_trend.png"
+    chart_path = BASE_DIR / "output" / "chart2_revenue_trend.png"
 
-    if os.path.exists(chart_path):
-        st.image(chart_path, use_container_width=True)
+    if chart_path.exists():
+        st.image(str(chart_path), use_container_width=True)
     else:
         st.info("Revenue Trend chart will appear here.")
 
@@ -356,10 +360,10 @@ elif page == "Trends":
 
     st.subheader("Revenue Contribution by Quarter")
 
-    chart_path = "output/chart4_revenue_composition.png"
+    chart_path = BASE_DIR / "output" / "chart4_revenue_composition.png"
 
-    if os.path.exists(chart_path):
-        st.image(chart_path, use_container_width=True)
+    if chart_path.exists():
+        st.image(str(chart_path), use_container_width=True)
     else:
         st.info("Quarterly Revenue chart will appear here.")
 
@@ -390,10 +394,10 @@ elif page == "Data Explorer":
 
         st.subheader("Order Value Distribution")
 
-        chart_path = "output/chart3_order_value_distribution.png"
+        chart_path = BASE_DIR / "output" / "chart3_order_value_distribution.png"
 
-        if os.path.exists(chart_path):
-            st.image(chart_path, use_container_width=True)
+        if chart_path.exists():
+            st.image(str(chart_path), use_container_width=True)
         else:
             st.info("Order Value Distribution chart will appear here.")
 
@@ -401,10 +405,10 @@ elif page == "Data Explorer":
 
         st.subheader("Marketing Spend vs Revenue")
 
-        chart_path = "output/chart5_marketing_vs_revenue.png"
+        chart_path = BASE_DIR / "output" / "chart5_marketing_vs_revenue.png"
 
-        if os.path.exists(chart_path):
-            st.image(chart_path, use_container_width=True)
+        if chart_path.exists():
+            st.image(str(chart_path), use_container_width=True)
         else:
             st.info("Marketing vs Revenue chart will appear here.")
 
@@ -439,6 +443,15 @@ elif page == "Data Explorer":
         monthly marketing spend and generated revenue.
         """)
 
+# feature/session-state-workflow
+st.divider()
+
+# ---------------------------
+# Dataset Upload
+# ---------------------------
+
+st.header("Dataset Upload")
+
 import pandas as pd
 
 st.set_page_config(
@@ -450,12 +463,23 @@ st.set_page_config(
 st.title("📂 Dataset Upload & Dynamic Preview")
 st.write("Upload a CSV or JSON dataset to preview, validate, and explore your data.")
 
+
 uploaded_file = st.file_uploader(
     "Upload CSV or JSON",
     type=["csv", "json"]
 )
 
 if uploaded_file is None:
+# feature/session-state-workflow
+    st.info("Upload a CSV or JSON file to view the dataset preview.")
+    st.stop()
+
+try:
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    elif uploaded_file.name.endswith(".json"):
+        df = pd.read_json(uploaded_file)
+
     st.info("Upload a CSV or JSON file to begin.")
     st.stop()
 
@@ -467,11 +491,13 @@ try:
     elif uploaded_file.name.endswith(".json"):
         df = pd.read_json(uploaded_file)
 
+ main
     else:
         st.error("Unsupported file type.")
         st.stop()
 
     # Empty file validation
+ main
     if df.empty:
         st.warning("Uploaded file is empty.")
         st.stop()
@@ -479,6 +505,134 @@ try:
 except Exception:
     st.error("Could not read this file. Please check the format and try again.")
     st.stop()
+
+
+st.divider()
+
+# ---------------------------
+# Session State Workflow
+# ---------------------------
+
+# "selected_segment" - stores the confirmed segment or category choice from Step 1.
+if "selected_segment" not in st.session_state:
+    st.session_state["selected_segment"] = "All"
+
+# "workflow_step" - tracks whether the user has confirmed Step 1 before showing Step 2.
+if "workflow_step" not in st.session_state:
+    st.session_state["workflow_step"] = 1
+
+# "analysis_result" - caches the Step 2 result so reruns do not recompute it unnecessarily.
+if "analysis_result" not in st.session_state:
+    st.session_state["analysis_result"] = None
+
+# "filter_date_start" - stores the start date used by the upload analysis filter.
+if "filter_date_start" not in st.session_state:
+    st.session_state["filter_date_start"] = None
+
+# "filter_date_end" - stores the end date used by the upload analysis filter.
+if "filter_date_end" not in st.session_state:
+    st.session_state["filter_date_end"] = None
+
+if st.sidebar.button("Reset Workflow"):
+    for key in [
+        "selected_segment",
+        "workflow_step",
+        "analysis_result",
+        "filter_date_start",
+        "filter_date_end",
+        "pending_segment_choice",
+        "pending_date_start",
+        "pending_date_end",
+    ]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
+st.header("Multi-Step Analysis Workflow")
+
+segment_source_column = None
+segment_columns = [column for column in df.columns if df[column].dtype == "object" or str(df[column].dtype).startswith("category")]
+if "segment" in df.columns:
+    segment_source_column = "segment"
+elif segment_columns:
+    segment_source_column = segment_columns[0]
+
+if segment_source_column is not None:
+    segment_options = ["All"] + sorted(df[segment_source_column].dropna().astype(str).unique().tolist())
+
+    # "pending_segment_choice" - holds the in-progress Step 1 selection before confirmation.
+    if "pending_segment_choice" not in st.session_state:
+        st.session_state["pending_segment_choice"] = st.session_state["selected_segment"]
+
+    # "pending_date_start" - holds the in-progress start date selection before confirmation.
+    if "pending_date_start" not in st.session_state:
+        st.session_state["pending_date_start"] = None
+
+    # "pending_date_end" - holds the in-progress end date selection before confirmation.
+    if "pending_date_end" not in st.session_state:
+        st.session_state["pending_date_end"] = None
+
+    st.subheader("Step 1: Select a Segment")
+    segment_choice = st.selectbox(
+        f"Choose {segment_source_column.title()}",
+        options=segment_options,
+        index=segment_options.index(st.session_state["pending_segment_choice"])
+        if st.session_state["pending_segment_choice"] in segment_options else 0,
+        key="pending_segment_choice",
+    )
+
+    if st.button("Confirm Selection"):
+        st.session_state["selected_segment"] = segment_choice
+        st.session_state["workflow_step"] = 2
+
+        filtered_df = df.copy()
+        if segment_choice != "All":
+            filtered_df = filtered_df[filtered_df[segment_source_column].astype(str) == segment_choice]
+
+        st.session_state["analysis_result"] = {
+            "segment_column": segment_source_column,
+            "segment_value": segment_choice,
+            "rows": int(len(filtered_df)),
+            "columns": int(len(filtered_df.columns)),
+            "null_pct": float((filtered_df.isnull().sum().sum() / max(filtered_df.shape[0] * filtered_df.shape[1], 1)) * 100),
+        }
+
+        st.session_state["filter_date_start"] = None
+        st.session_state["filter_date_end"] = None
+
+    if st.session_state["workflow_step"] >= 2:
+        st.subheader("Step 2: Analysis")
+        chosen_segment = st.session_state["selected_segment"]
+        st.write(f"Analysing: {chosen_segment}")
+
+        if st.session_state["analysis_result"] is None or st.session_state["analysis_result"].get("segment_value") != chosen_segment:
+            recalculated_df = df.copy()
+            if chosen_segment != "All":
+                recalculated_df = recalculated_df[recalculated_df[segment_source_column].astype(str) == chosen_segment]
+
+            st.session_state["analysis_result"] = {
+                "segment_column": segment_source_column,
+                "segment_value": chosen_segment,
+                "rows": int(len(recalculated_df)),
+                "columns": int(len(recalculated_df.columns)),
+                "null_pct": float((recalculated_df.isnull().sum().sum() / max(recalculated_df.shape[0] * recalculated_df.shape[1], 1)) * 100),
+            }
+
+        analysis_result = st.session_state["analysis_result"]
+        workflow_col1, workflow_col2, workflow_col3 = st.columns(3)
+
+        with workflow_col1:
+            st.metric("Rows", f"{analysis_result['rows']:,}")
+
+        with workflow_col2:
+            st.metric("Columns", f"{analysis_result['columns']:,}")
+
+        with workflow_col3:
+            st.metric("Null %", f"{analysis_result['null_pct']:.1f}%")
+
+        st.caption("The confirmed choice stays available when other widgets rerun the page.")
+else:
+    st.info("No categorical column was found for the step-by-step workflow.")
 
 # Success Message
 st.success(
@@ -672,6 +826,7 @@ with st.expander("ℹ️ How the filter chain works"):
     the script from the top and resets every widget to its `value=` default.
     """)
 
+
 # ---------------------------
 # Dataset Summary
 # ---------------------------
@@ -796,5 +951,4 @@ st.download_button(
     file_name="uploaded_dataset.csv",
     mime="text/csv"
 )
-
 
