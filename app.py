@@ -1,4 +1,7 @@
 
+from dashboard_core import main
+
+
 """
 app.py
 ------
@@ -234,7 +237,8 @@ c_rev.metric(
 c_aov.metric(
     "Avg Order Value",
     f"${filtered_df['revenue'].mean():,.2f}",
-=======
+
+  
 import streamlit as st
  feature/streamlit-dashboard-shell
 import os
@@ -453,13 +457,6 @@ st.divider()
 st.header("Dataset Upload")
 
 import pandas as pd
-
-st.set_page_config(
-    page_title="Dataset Upload",
-    page_icon="📂",
-    layout="wide"
-)
-
 st.title("📂 Dataset Upload & Dynamic Preview")
 st.write("Upload a CSV or JSON dataset to preview, validate, and explore your data.")
 
@@ -642,7 +639,7 @@ st.success(
 
 st.divider()
 
-feature/streamlit-filters-widgets
+
 
 # ─────────────────────────────────────────────
 # Charts — all read from filtered_df  (Task 2)
