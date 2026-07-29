@@ -1,0 +1,22 @@
+
+SQL JOIN ANALYSIS
+
+LEFT JOIN
+Keeps all customers.
+Customers without orders remain.
+
+INNER JOIN
+Returns only matching customers.
+
+FULL OUTER JOIN
+Returns every customer and every order.
+
+Validation
+Checked row counts.
+Checked orphan orders.
+Verified join outputs.
+
+Business Use
+Customer analysis
+Revenue analysis
+Product analysis
