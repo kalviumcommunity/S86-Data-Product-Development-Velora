@@ -1,17 +1,21 @@
 """
 app.py
 ------
-BSB 2.53 - Streamlit Filters & Interactive Widgets
+BSB 2.53 + 2.56 - Streamlit Filters, Widgets & Alert Monitoring
 
-Wires four widget types to a DataFrame so every filter change
-propagates instantly to all downstream charts and metrics.
-
-Tasks:
+2.53 tasks:
   Task 1 : Four widget types — date picker, multi-select, slider, radio
   Task 2 : Filter chain wired to DataFrame; reactive charts + row count
   Task 3 : Meaningful defaults — full range on first load, nothing empty
   Task 4 : Empty-state handling — warning + st.stop() instead of crash
   Task 5 : Reset Filters button using st.rerun()
+
+2.56 tasks:
+  Task 1 : Five metrics monitored against thresholds (via alert_config.py)
+  Task 2 : Visual alerts — st.error (critical) / st.warning (warning)
+  Task 3 : Thresholds in alert_config.py, not hardcoded here
+  Task 4 : Each alert message has metric name, value, threshold, action
+  Task 5 : Alerts recalculate on every filter change (reactive)
 
 Run: streamlit run app.py
 """
@@ -22,6 +26,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date, timedelta
 from sqlalchemy import create_engine
+
+# BSB 2.56 — Task 3: import thresholds from config file, not hardcoded
+from alert_config import ALERT_THRESHOLDS
 
 # ─────────────────────────────────────────────
 # Page config
@@ -100,7 +107,8 @@ ALL_SEGS = sorted(df["segment"].dropna().unique().tolist())
 st.title("📊 Sales Data Explorer")
 st.caption(
     "Use the sidebar filters to explore any slice of the dataset. "
-    "All charts and metrics update instantly."
+    "All charts and metrics update instantly. "
+    "Alert banners appear automatically when a KPI crosses its threshold."
 )
 st.divider()
 
@@ -208,6 +216,127 @@ if len(filtered_df) == 0:
         "Click **Reset Filters** in the sidebar to restore defaults."
     )
     st.stop()   # Halts execution cleanly — no chart errors, no crashes
+
+
+# ═════════════════════════════════════════════
+# BSB 2.56 — ALERT MONITORING SYSTEM
+# Tasks 1-5: compute metrics, check thresholds, display reactive alerts
+# ═════════════════════════════════════════════
+
+def compute_metrics(fdf: pd.DataFrame, full_df: pd.DataFrame) -> dict:
+    """
+    Compute all monitored metrics from the filtered DataFrame.
+    Called on every rerun → alerts always reflect current filter state.
+
+    Args:
+        fdf:      Filtered DataFrame (current view)
+        full_df:  Full unfiltered DataFrame (for coverage calculation)
+
+    Returns:
+        dict mapping threshold keys → current numeric values
+    """
+    # Churn rate: customers in full dataset not in filtered view
+    # (proxy: filtered customers vs total unique customers)
+    total_customers = full_df["customer_id"].nunique()
+    filtered_customers = fdf["customer_id"].nunique()
+    missing_customers = total_customers - filtered_customers
+    churn_rate = (missing_customers / total_customers * 100) if total_customers else 0
+
+    # Average order value
+    avg_order_value = fdf["revenue"].mean() if len(fdf) > 0 else 0
+
+    # Null percentage in revenue column
+    null_pct = (fdf["revenue"].isna().sum() / len(fdf) * 100) if len(fdf) > 0 else 0
+
+    # Coverage: what % of full dataset is visible in filtered view
+    coverage_pct = (len(fdf) / len(full_df) * 100) if len(full_df) > 0 else 0
+
+    # Unique customers in filtered view
+    unique_customers = int(fdf["customer_id"].nunique())
+
+    return {
+        "churn_rate":       round(churn_rate, 2),
+        "avg_order_value":  round(avg_order_value, 2),
+        "null_percentage":  round(null_pct, 2),
+        "coverage_pct":     round(coverage_pct, 2),
+        "unique_customers": unique_customers,
+    }
+
+
+def check_alerts(metrics: dict, thresholds: dict) -> list:
+    """
+    Compare each metric against its configured threshold.
+
+    Args:
+        metrics:    Dict of {key: current_value} from compute_metrics()
+        thresholds: ALERT_THRESHOLDS from alert_config.py
+
+    Returns:
+        List of triggered alert dicts, each with full message context.
+    """
+    triggered = []
+    for key, config in thresholds.items():
+        if key not in metrics:
+            continue
+        value = metrics[key]
+        threshold = config["threshold"]
+        breached = (
+            (config["direction"] == "above" and value > threshold) or
+            (config["direction"] == "below" and value < threshold)
+        )
+        if breached:
+            triggered.append({
+                "key":       key,
+                "metric":    config["metric"],
+                "value":     value,
+                "threshold": threshold,
+                "direction": config["direction"],
+                "severity":  config["severity"],
+                "message":   config["message"],
+            })
+    return triggered
+
+
+# ── Task 1 & 5: compute metrics from filtered_df (reactive) ─────────────
+current_metrics = compute_metrics(filtered_df, df)
+
+# ── Task 2: check thresholds and display alerts ──────────────────────────
+active_alerts = check_alerts(current_metrics, ALERT_THRESHOLDS)
+
+if active_alerts:
+    st.markdown("### 🚨 Active Alerts")
+    for alert in active_alerts:
+        direction_word = "above" if alert["direction"] == "above" else "below"
+
+        # Task 4: message includes metric name, current value, threshold, action
+        banner = (
+            f"**{alert['metric']}** is **{alert['value']}** "
+            f"({direction_word} threshold of {alert['threshold']}). "
+            f"{alert['message']}"
+        )
+
+        if alert["severity"] == "critical":
+            st.error(f"🔴 CRITICAL — {banner}")    # red banner
+        else:
+            st.warning(f"🟡 WARNING — {banner}")   # amber banner
+
+    st.divider()
+else:
+    st.success("✅ All metrics within normal thresholds.")
+    st.divider()
+
+# Alert status sidebar summary
+st.sidebar.divider()
+st.sidebar.subheader("🚨 Alert Status")
+if active_alerts:
+    critical_count = sum(1 for a in active_alerts if a["severity"] == "critical")
+    warning_count  = sum(1 for a in active_alerts if a["severity"] == "warning")
+    if critical_count:
+        st.sidebar.error(f"{critical_count} critical alert(s) active")
+    if warning_count:
+        st.sidebar.warning(f"{warning_count} warning(s) active")
+else:
+    st.sidebar.success("All clear ✅")
 
 
 # ─────────────────────────────────────────────
@@ -418,4 +547,41 @@ with st.expander("ℹ️ How the filter chain works"):
 
     **Reset:** the Reset Filters button calls `st.rerun()`, which re-executes
     the script from the top and resets every widget to its `value=` default.
+    """)
+
+with st.expander("🚨 How the alert system works"):
+    st.markdown("""
+    **Alert flow on every filter change:**
+
+    ```
+    Sidebar widget changed
+           ↓
+    Streamlit reruns app.py
+           ↓
+    filtered_df recomputed
+           ↓
+    compute_metrics(filtered_df) → {churn_rate, avg_order_value, ...}
+           ↓
+    check_alerts(metrics, ALERT_THRESHOLDS) → list of triggered alerts
+           ↓
+    st.error() or st.warning() displayed at top of page
+    ```
+
+    **Monitored metrics:**
+
+    | Metric Key | Threshold | Direction | Severity |
+    |---|---|---|---|
+    | `churn_rate` | 7.0% | above | 🔴 Critical |
+    | `avg_order_value` | $80 | below | 🟡 Warning |
+    | `null_percentage` | 5.0% | above | 🟡 Warning |
+    | `coverage_pct` | 10.0% | below | 🟡 Warning |
+    | `unique_customers` | 5 | below | 🔴 Critical |
+
+    **To change a threshold:** edit `alert_config.py` only.
+    The display logic in `app.py` never hardcodes a limit.
+
+    **Task 5 — reactive alerts:**
+    Filter to a single high-churn segment → alert fires.
+    Switch to a healthy segment → alert clears automatically.
+    No manual refresh needed; Streamlit's rerun model handles it.
     """)
