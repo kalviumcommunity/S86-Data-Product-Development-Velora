@@ -16,11 +16,14 @@ Tasks covered:
 
 import os
 import json
+import smtplib
 import pandas as pd
 import numpy as np
 from datetime import datetime, date, timedelta
 from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # ─────────────────────────────────────────────
 # Helper: Markdown to HTML
@@ -64,6 +67,73 @@ def markdown_to_html(markdown_text: str) -> str:
     html = html.replace('\n', '<br>\n')
     
     return html
+
+
+# ═════════════════════════════════════════════
+# Structured Report + Email Delivery
+# ═════════════════════════════════════════════
+
+def generate_report(df: pd.DataFrame, report_date) -> str:
+    """Generate a structured text report from analysis output."""
+
+    revenue_series = pd.to_numeric(df.get("revenue", pd.Series(dtype=float)), errors="coerce").dropna()
+    total_revenue = float(revenue_series.sum()) if not revenue_series.empty else 0.0
+    average_order_value = float(revenue_series.mean()) if not revenue_series.empty else 0.0
+    active_customers = int(df["customer_id"].nunique()) if "customer_id" in df.columns else 0
+
+    top_segment = "N/A"
+    if "segment" in df.columns and not revenue_series.empty:
+        segment_frame = df[["segment", "revenue"]].copy()
+        segment_frame["revenue"] = pd.to_numeric(segment_frame["revenue"], errors="coerce")
+        segment_totals = segment_frame.dropna(subset=["segment"]).groupby("segment")["revenue"].sum().dropna()
+        if not segment_totals.empty:
+            top_segment = str(segment_totals.idxmax())
+
+    report_lines = []
+    report_lines.append("WEEKLY ANALYTICS REPORT")
+    report_lines.append("Date: " + str(report_date))
+    report_lines.append("")
+    report_lines.append("== KPI SUMMARY ==")
+    report_lines.append("Total Revenue: $" + f"{total_revenue:,.0f}")
+    report_lines.append("Active Customers: " + f"{active_customers:,}")
+    report_lines.append("Average Order Value: $" + f"{average_order_value:,.0f}")
+    report_lines.append("")
+    report_lines.append("== KEY FINDING ==")
+    report_lines.append("Top performing segment: " + top_segment)
+    report_lines.append("")
+    report_lines.append("== RECOMMENDED ACTION ==")
+    report_lines.append("Review segment performance and allocate resources to high-growth areas.")
+
+    return "\n".join(report_lines)
+
+
+def send_report_email(report_text: str, recipient: str) -> bool:
+    """Send the report via email using SMTP credentials from environment variables."""
+
+    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    sender_email = os.environ.get("SENDER_EMAIL")
+    sender_password = os.environ.get("SENDER_PASSWORD")
+
+    if not sender_email or not sender_password:
+        print("Email credentials not configured. Skipping send.")
+        return False
+
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = recipient
+    message["Subject"] = "Weekly Analytics Report"
+    message.attach(MIMEText(report_text, "plain"))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(message)
+        return True
+    except Exception as exc:
+        print("Email send failed: " + str(exc))
+        return False
 
 
 # ═════════════════════════════════════════════

@@ -24,11 +24,12 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from sqlalchemy import create_engine
 
 # BSB 2.56 — Task 3: import thresholds from config file, not hardcoded
 from alert_config import ALERT_THRESHOLDS
+from export_functions import generate_report, send_report_email
 
 # ─────────────────────────────────────────────
 # Page config
@@ -216,6 +217,39 @@ if len(filtered_df) == 0:
         "Click **Reset Filters** in the sidebar to restore defaults."
     )
     st.stop()   # Halts execution cleanly — no chart errors, no crashes
+
+
+# ─────────────────────────────────────────────
+# Report generation and email delivery
+# ─────────────────────────────────────────────
+
+report_date = datetime.now().date()
+report_text = generate_report(filtered_df, report_date)
+
+st.sidebar.divider()
+st.sidebar.header("📤 Report Actions")
+recipient_email = st.sidebar.text_input("Recipient Email", key="recipient_email")
+
+if st.sidebar.button("Send Report", use_container_width=True):
+    if not recipient_email:
+        st.sidebar.error("Enter a recipient email.")
+    else:
+        success = send_report_email(report_text, recipient_email)
+        if success:
+            st.sidebar.success(f"Report sent to {recipient_email}")
+        else:
+            st.sidebar.error("Failed to send. Check email config.")
+
+st.sidebar.download_button(
+    label="Download Report (TXT)",
+    data=report_text,
+    file_name=f"weekly_analytics_report_{report_date.isoformat()}.txt",
+    mime="text/plain",
+    use_container_width=True,
+)
+
+with st.expander("Generated Report Preview", expanded=False):
+    st.text(report_text)
 
 
 # ═════════════════════════════════════════════
