@@ -1,0 +1,27 @@
+## Q1
+
+### How does an index improve performance?
+
+An index lets the database locate matching rows quickly instead of scanning the entire table.
+This reduces disk reads and speeds up WHERE filtering.
+Trade-off: indexes consume storage and slightly slow INSERT, UPDATE, and DELETE operations because the index must also be updated.
+
+## Q2
+
+### Does a CTE get recalculated?
+
+In many modern databases, the optimizer may reuse or cache a CTE if referenced multiple times.
+Some databases allow explicit materialization (MATERIALIZED) to force caching.
+Others may inline the CTE depending on the execution plan.
+
+## Q3
+
+### If the filtered dataset is still huge?
+
+**Additional optimizations include:**
+
+Partition large tables by date or region.
+Create indexes on frequently filtered columns.
+Use materialized views for precomputed summaries.
+Pre-aggregate data for dashboards.
+Optimize joins and avoid unnecessary columns.

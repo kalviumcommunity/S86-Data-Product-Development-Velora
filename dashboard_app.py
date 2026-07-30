@@ -92,6 +92,42 @@ def generate_sample_data():
 
 monthly_df, detailed_df, segment_df = generate_sample_data()
 
+# "selected_segment" - stores the segment confirmed in Step 1 so reruns do not reset the workflow.
+if "selected_segment" not in st.session_state:
+    st.session_state["selected_segment"] = "All"
+
+# "workflow_step" - tracks whether the user has completed Step 1 before showing Step 2.
+if "workflow_step" not in st.session_state:
+    st.session_state["workflow_step"] = 1
+
+# "analysis_result" - caches the Step 2 summary so unrelated widget changes do not clear it.
+if "analysis_result" not in st.session_state:
+    st.session_state["analysis_result"] = None
+
+# "filter_date_start" - stores the start of the date filter and survives reruns.
+if "filter_date_start" not in st.session_state:
+    st.session_state["filter_date_start"] = detailed_df["last_activity"].min().date()
+
+# "filter_date_end" - stores the end of the date filter and survives reruns.
+if "filter_date_end" not in st.session_state:
+    st.session_state["filter_date_end"] = detailed_df["last_activity"].max().date()
+
+# "selected_detail_regions" - keeps the region filter aligned across interactions.
+if "selected_detail_regions" not in st.session_state:
+    st.session_state["selected_detail_regions"] = ["All"]
+
+# "selected_detail_churn_risks" - keeps the churn-risk filter aligned across interactions.
+if "selected_detail_churn_risks" not in st.session_state:
+    st.session_state["selected_detail_churn_risks"] = ["All"]
+
+# "revenue_range" - stores the revenue slider bounds so the filter does not reset on reruns.
+if "revenue_range" not in st.session_state:
+    st.session_state["revenue_range"] = (0, int(detailed_df["revenue"].max()))
+
+# "segment_selection_pending" - stores the in-progress Step 1 choice before the user confirms it.
+if "segment_selection_pending" not in st.session_state:
+    st.session_state["segment_selection_pending"] = st.session_state["selected_segment"]
+
 # Current vs previous month for KPI cards
 current_month = monthly_df.iloc[-1]
 previous_month = monthly_df.iloc[-2]
@@ -338,9 +374,122 @@ st.markdown('---')
 st.subheader('🔍 Detailed Data Explorer')
 st.markdown('*Drill down into specific segments and timeframes*')
 
+# Keep the workflow controllable from the sidebar and make resets explicit.
+if st.sidebar.button("Reset Workflow"):
+    for key in [
+        "selected_segment",
+        "workflow_step",
+        "analysis_result",
+        "filter_date_start",
+        "filter_date_end",
+        "selected_detail_regions",
+        "selected_detail_churn_risks",
+        "revenue_range",
+        "segment_selection_pending",
+    ]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
+# Step 1: select a segment and confirm it so the choice survives reruns.
+st.markdown('### Step 1: Select Segment')
+segment_options = ['All'] + list(detailed_df['segment'].unique())
+
+segment_choice = st.selectbox(
+    'Customer Segment',
+    options=segment_options,
+    index=segment_options.index(st.session_state['segment_selection_pending'])
+    if st.session_state['segment_selection_pending'] in segment_options else 0,
+    key='segment_selection_pending'
+)
+
+if st.button('Confirm Segment'):
+    st.session_state['selected_segment'] = segment_choice
+    st.session_state['workflow_step'] = 2
+    confirmed_segment_df = detailed_df.copy()
+
+    if segment_choice != 'All':
+        confirmed_segment_df = confirmed_segment_df[confirmed_segment_df['segment'] == segment_choice]
+
+    st.session_state['analysis_result'] = {
+        'segment': segment_choice,
+        'customer_count': int(len(confirmed_segment_df)),
+        'total_revenue': float(confirmed_segment_df['revenue'].sum()),
+        'avg_revenue': float(confirmed_segment_df['revenue'].mean()) if not confirmed_segment_df.empty else 0.0,
+    }
+
+if st.session_state['workflow_step'] >= 2:
+    st.markdown('### Step 2: Analysis')
+    chosen_segment = st.session_state['selected_segment']
+    st.write('Analysing: ' + chosen_segment)
+
+    if (
+        st.session_state['analysis_result'] is None
+        or st.session_state['analysis_result'].get('segment') != chosen_segment
+    ):
+        recalculated_segment_df = detailed_df.copy()
+        if chosen_segment != 'All':
+            recalculated_segment_df = recalculated_segment_df[recalculated_segment_df['segment'] == chosen_segment]
+
+        st.session_state['analysis_result'] = {
+            'segment': chosen_segment,
+            'customer_count': int(len(recalculated_segment_df)),
+            'total_revenue': float(recalculated_segment_df['revenue'].sum()),
+            'avg_revenue': float(recalculated_segment_df['revenue'].mean()) if not recalculated_segment_df.empty else 0.0,
+        }
+
+    analysis_result = st.session_state['analysis_result']
+    analysis_col1, analysis_col2, analysis_col3 = st.columns(3)
+
+    with analysis_col1:
+        st.metric('Customers', f"{analysis_result['customer_count']:,}")
+
+    with analysis_col2:
+        st.metric('Total Revenue', f"${analysis_result['total_revenue']:,.0f}")
+
+    with analysis_col3:
+        st.metric('Avg Revenue', f"${analysis_result['avg_revenue']:,.0f}")
+
+    st.caption('Changing unrelated widgets keeps the confirmed segment and cached analysis in session state.')
+
 # Sidebar filters
 st.sidebar.header('🎛️ Filters')
 st.sidebar.markdown('*Narrow down the data to analyze specific cohorts*')
+
+filter_start_date = st.sidebar.date_input(
+    'Start Date',
+    value=st.session_state['filter_date_start'],
+    key='filter_date_start'
+)
+
+filter_end_date = st.sidebar.date_input(
+    'End Date',
+    value=st.session_state['filter_date_end'],
+    key='filter_date_end'
+)
+
+selected_region = st.sidebar.multiselect(
+    'Region',
+    options=['All'] + list(detailed_df['region'].unique()),
+    default=st.session_state['selected_detail_regions'],
+    key='selected_detail_regions'
+)
+
+selected_churn_risk = st.sidebar.multiselect(
+    'Churn Risk',
+    options=['All'] + list(detailed_df['churn_risk'].unique()),
+    default=st.session_state['selected_detail_churn_risks'],
+    key='selected_detail_churn_risks'
+)
+
+min_revenue, max_revenue = st.sidebar.slider(
+    'Revenue Range ($)',
+    min_value=0,
+    max_value=int(detailed_df['revenue'].max()),
+    value=st.session_state['revenue_range'],
+    step=500,
+    key='revenue_range'
+)
 
 selected_segment = st.sidebar.multiselect(
     'Customer Segment',
@@ -348,28 +497,13 @@ selected_segment = st.sidebar.multiselect(
     default=['All']
 )
 
-selected_region = st.sidebar.multiselect(
-    'Region',
-    options=['All'] + list(detailed_df['region'].unique()),
-    default=['All']
-)
-
-selected_churn_risk = st.sidebar.multiselect(
-    'Churn Risk',
-    options=['All'] + list(detailed_df['churn_risk'].unique()),
-    default=['All']
-)
-
-min_revenue, max_revenue = st.sidebar.slider(
-    'Revenue Range ($)',
-    min_value=0,
-    max_value=int(detailed_df['revenue'].max()),
-    value=(0, int(detailed_df['revenue'].max())),
-    step=500
-)
-
 # Apply filters
 filtered_df = detailed_df.copy()
+
+filtered_df = filtered_df[
+    (filtered_df['last_activity'].dt.date >= filter_start_date) &
+    (filtered_df['last_activity'].dt.date <= filter_end_date)
+]
 
 if 'All' not in selected_segment:
     filtered_df = filtered_df[filtered_df['segment'].isin(selected_segment)]

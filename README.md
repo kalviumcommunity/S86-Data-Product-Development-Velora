@@ -191,13 +191,13 @@ pip install -r requirements.txt
 ### 5. Run the Streamlit Dashboard
 
 ```cmd id="7mmly5"
-streamlit run app\app.py
+streamlit run app.py
 ```
 
 If the command does not work, use:
 
 ```cmd id="f3jyba"
-python -m streamlit run app\app.py
+python -m streamlit run app.py
 ```
 
 ---
@@ -212,7 +212,7 @@ cd velora
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-streamlit run app\app.py
+streamlit run app.py
 ```
 
 Each teammate should create their own virtual environment.
@@ -252,7 +252,7 @@ pip install -r requirements.txt
 Run the dashboard:
 
 ```cmd id="4r3ev6"
-streamlit run app\app.py
+streamlit run app.py
 ```
 
 ---
