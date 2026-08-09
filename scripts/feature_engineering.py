@@ -1,158 +1,173 @@
-import os
-
 import pandas as pd
 
-INPUT_FILE = "data/raw/customer_features.csv"
-OUTPUT_FILE = "data/processed/customer_features_engineered.csv"
+# ==========================================================
+# Load Cleaned Data
+# ==========================================================
 
+customers = pd.read_csv("data/customers_clean.csv")
+tickets = pd.read_csv("data/tickets_clean.csv")
+escalations = pd.read_csv("data/escalations_clean.csv")
+cancellations = pd.read_csv("data/cancellations_clean.csv")
 
-def create_ratio_features(df):
-    """
-    Create ratio-based business features.
-    """
+# ==========================================================
+# Merge Data
+# ==========================================================
 
-    df["transactions_per_month"] = (
-        df["total_transactions"] /
-        (df["days_as_customer"] / 30)
-    )
+df = tickets.merge(
+    customers,
+    on="customer_id",
+    how="left"
+)
 
-    df["avg_spend_per_transaction"] = (
-        df["total_spent"] /
-        df["total_transactions"]
-    )
+df = df.merge(
+    escalations[
+        ["ticket_id", "escalated", "escalation_level"]
+    ],
+    on="ticket_id",
+    how="left"
+)
 
-    df["lifetime_value_per_month"] = (
-        df["total_spent"] /
-        (df["days_as_customer"] / 30)
-    )
+df = df.merge(
+    cancellations[
+        ["customer_id", "cancelled"]
+    ],
+    on="customer_id",
+    how="left"
+)
 
-    print("\nRatio Features")
-    print(df[
-        [
-            "transactions_per_month",
-            "avg_spend_per_transaction",
-            "lifetime_value_per_month"
-        ]
-    ].describe())
+# ==========================================================
+# Handle Missing Values
+# ==========================================================
 
-    return df
+df["escalated"] = df["escalated"].fillna("No")
+df["cancelled"] = df["cancelled"].fillna("No")
 
+# ==========================================================
+# Date Conversion
+# ==========================================================
 
-def create_engagement_tier(df):
-    """
-    Equal-width bins.
-    """
+df["created_date"] = pd.to_datetime(df["created_date"])
+df["resolved_date"] = pd.to_datetime(df["resolved_date"])
 
-    df["engagement_tier"] = pd.cut(
-        df["transactions_per_month"],
-        bins=[0, 2, 10, float("inf")],
-        labels=["Low", "Medium", "High"],
-    )
+# ==========================================================
+# Resolution Days
+# ==========================================================
 
-    print("\nEngagement Tier")
-    print(df["engagement_tier"].value_counts())
+df["resolution_days"] = (
+    df["resolved_date"] - df["created_date"]
+).dt.days
 
-    return df
+df["resolution_days"] = df["resolution_days"].fillna(0)
 
+# ==========================================================
+# Flags
+# ==========================================================
 
-def create_spend_quartile(df):
-    """
-    Quantile-based spend tiers.
-    """
+df["is_unresolved"] = df["status"] != "Resolved"
 
-    df["spend_quartile"] = pd.qcut(
-        df["total_spent"],
-        q=4,
-        labels=["Q1", "Q2", "Q3", "Q4"],
-    )
+df["is_escalated"] = df["escalated"] == "Yes"
 
-    print("\nSpend Quartiles")
-    print(df["spend_quartile"].value_counts())
+df["churned"] = df["cancelled"] == "Yes"
 
-    return df
+# ==========================================================
+# Complaint Count
+# ==========================================================
 
+complaints = (
+    df.groupby("customer_id")
+      .size()
+      .reset_index(name="complaint_count")
+)
 
-def create_rfm_score(df):
-    """
-    Create composite RFM score.
-    """
+df = df.merge(
+    complaints,
+    on="customer_id",
+    how="left"
+)
 
-    df["recency_score"] = pd.qcut(
-        df["days_since_last_purchase"],
-        q=5,
-        labels=[5, 4, 3, 2, 1],
-    )
+df["repeat_customer"] = df["complaint_count"] >= 3
 
-    df["frequency_score"] = pd.qcut(
-        df["purchase_count"],
-        q=5,
-        labels=[1, 2, 3, 4, 5],
-    )
+# ==========================================================
+# Priority Score
+# ==========================================================
 
-    df["monetary_score"] = pd.qcut(
-        df["total_spent"],
-        q=5,
-        labels=[1, 2, 3, 4, 5],
-    )
+df["priority_score"] = (
+    df["complaint_count"] * 10 +
+    df["is_unresolved"].astype(int) * 30 +
+    df["is_escalated"].astype(int) * 20 +
+    df["resolution_days"] * 2
+)
 
-    df["rfm_score"] = (
-        df["recency_score"].astype(int)
-        + df["frequency_score"].astype(int)
-        + df["monetary_score"].astype(int)
-    )
+# ==========================================================
+# Priority Level
+# ==========================================================
 
-    return df
+def get_priority(score):
+    if score >= 70:
+        return "High"
+    elif score >= 40:
+        return "Medium"
+    return "Low"
 
+df["priority_level"] = df["priority_score"].apply(get_priority)
 
-def validate_features(df):
-    """
-    Validate engineered features.
-    """
+# ==========================================================
+# Recommended Action
+# ==========================================================
 
-    print("\nValidation")
+def get_action(level):
+    if level == "High":
+        return "📞 Contact Customer Immediately"
+    elif level == "Medium":
+        return "📧 Follow Up Within 24 Hours"
+    else:
+        return "👀 Monitor"
 
-    print("\nEngagement Tier Distribution")
-    print(df["engagement_tier"].value_counts())
+df["recommended_action"] = df["priority_level"].apply(get_action)
 
-    print(
-        f"\nRFM Score Range: "
-        f"{df['rfm_score'].min()} - {df['rfm_score'].max()}"
-    )
+# ==========================================================
+# Sort by Priority
+# ==========================================================
 
-    print("\nMissing Values")
+df = df.sort_values(
+    by=["priority_score", "complaint_count"],
+    ascending=False
+)
 
-    print(
-        df[
-            [
-                "engagement_tier",
-                "spend_quartile",
-                "rfm_score",
-            ]
-        ].isna().sum()
-    )
+# ==========================================================
+# Priority Reason
+# ==========================================================
 
-    return df
+def get_priority_reason(row):
+    reasons = []
 
+    if row["is_unresolved"]:
+        reasons.append("Unresolved Ticket")
 
-if __name__ == "__main__":
+    if row["is_escalated"]:
+        reasons.append("Escalated Case")
 
-    df = pd.read_csv(INPUT_FILE)
+    if row["repeat_customer"]:
+        reasons.append("Repeat Complaints")
 
-    df = create_ratio_features(df)
+    if row["resolution_days"] > 7:
+        reasons.append("Delayed Resolution")
 
-    df = create_engagement_tier(df)
+    return ", ".join(reasons) if reasons else "No Immediate Risk"
 
-    df = create_spend_quartile(df)
+df["priority_reason"] = df.apply(get_priority_reason, axis=1)
 
-    df = create_rfm_score(df)
+# ==========================================================
+# Save Master Dataset
+# ==========================================================
 
-    df = validate_features(df)
+df.to_csv(
+    "data/master_dataset.csv",
+    index=False
+)
 
-    os.makedirs("data/processed", exist_ok=True)
-
-    df.to_csv(
-        OUTPUT_FILE,
-        index=False,
-    )
-
-    print("\nFeature Engineering Completed Successfully.")
+print("✅ Master dataset created successfully!")
+print(f"Total Records: {len(df)}")
+print(f"High Priority Customers: {(df['priority_level'] == 'High').sum()}")
+print(f"Medium Priority Customers: {(df['priority_level'] == 'Medium').sum()}")
+print(f"Low Priority Customers: {(df['priority_level'] == 'Low').sum()}")
