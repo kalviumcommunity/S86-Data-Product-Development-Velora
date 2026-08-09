@@ -195,6 +195,8 @@ Add screenshots of the following pages:
 ## Contributors
 
 - Herald Keerthana Nukabatni
+- P V Sonali
+- B. Bhanu Sree
 
 ---
 
