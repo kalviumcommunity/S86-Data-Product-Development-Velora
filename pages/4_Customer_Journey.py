@@ -4,22 +4,54 @@ import plotly.express as px
 
 from utils.database import load_data
 
+
 st.set_page_config(
     page_title="Customer Journey",
     page_icon="👤",
     layout="wide"
 )
 
+
+# --------------------------------------------------
+# Custom Styling
+# --------------------------------------------------
+
+st.markdown("""
+<style>
+
+[data-testid="stMetricValue"] {
+    font-size: 22px !important;
+}
+
+[data-testid="stMetricLabel"] {
+    font-size: 13px !important;
+}
+
+[data-testid="stMetric"] {
+    padding: 5px 0px !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# --------------------------------------------------
+# Page Header
+# --------------------------------------------------
+
 st.title("👤 Customer Journey")
+
 st.markdown(
     "Explore a customer's complete support history, complaint timeline and churn risk."
 )
+
 
 # --------------------------------------------------
 # Load Data
 # --------------------------------------------------
 
 df = load_data()
+
 
 # --------------------------------------------------
 # Customer Selection
@@ -32,13 +64,18 @@ selected_customer = st.selectbox(
     customer_ids
 )
 
-customer_df = df[df["customer_id"] == selected_customer].copy()
+customer_df = df[
+    df["customer_id"] == selected_customer
+].copy()
+
 
 if customer_df.empty:
     st.warning("Customer not found.")
     st.stop()
 
+
 customer = customer_df.iloc[0]
+
 
 # --------------------------------------------------
 # Customer Profile
@@ -46,24 +83,56 @@ customer = customer_df.iloc[0]
 
 st.subheader("📋 Customer Profile")
 
-col1, col2, col3, col4 = st.columns(4)
 
-col1.metric("Customer", customer["customer_name"])
-col2.metric("Segment", customer["segment"])
-col3.metric("Region", customer["region"])
-col4.metric("Support Channel", customer["support_channel"])
+# First row
 
-col5, col6, col7, col8 = st.columns(4)
+c1, c2, c3, c4 = st.columns(4)
 
-col5.metric("Complaints", int(customer["complaint_count"]))
-col6.metric("Priority", customer["priority_level"])
-col7.metric("Priority Score", int(customer["priority_score"]))
-col8.metric(
-    "Cancelled",
-    "Yes" if customer["churned"] else "No"
+c1.metric(
+    "Customer",
+    customer["customer_name"]
 )
 
-st.divider()
+c2.metric(
+    "Segment",
+    customer["segment"]
+)
+
+c3.metric(
+    "Region",
+    customer["region"]
+)
+
+c4.metric(
+    "Channel",
+    customer["support_channel"]
+)
+
+
+# Second row
+
+c1, c2, c3, c4 = st.columns(4)
+
+c1.metric(
+    "Complaints",
+    customer["complaint_count"]
+)
+
+c2.metric(
+    "Priority",
+    customer["priority_level"]
+)
+
+c3.metric(
+    "Risk Score",
+    customer["priority_score"]
+)
+
+c4.metric(
+    "Cancelled",
+    customer["cancelled"]
+)
+
 
 # --------------------------------------------------
 # Complaint Timeline
@@ -71,7 +140,9 @@ st.divider()
 
 st.subheader("📈 Complaint Timeline")
 
+
 timeline = customer_df.sort_values("created_date")
+
 
 fig = px.line(
     timeline,
@@ -81,16 +152,19 @@ fig = px.line(
     title="Resolution Time Across Complaints"
 )
 
+
 st.plotly_chart(
     fig,
     use_container_width=True
 )
 
+
 # --------------------------------------------------
-# Ticket Status
+# Ticket Status & Complaint Categories
 # --------------------------------------------------
 
 left, right = st.columns(2)
+
 
 with left:
 
@@ -105,6 +179,7 @@ with left:
         use_container_width=True
     )
 
+
 with right:
 
     category = (
@@ -113,7 +188,10 @@ with right:
         .reset_index()
     )
 
-    category.columns = ["Category", "Tickets"]
+    category.columns = [
+        "Category",
+        "Tickets"
+    ]
 
     fig = px.bar(
         category,
@@ -128,13 +206,16 @@ with right:
         use_container_width=True
     )
 
+
 st.divider()
+
 
 # --------------------------------------------------
 # Ticket History
 # --------------------------------------------------
 
 st.subheader("🎫 Ticket History")
+
 
 history = customer_df[
     [
@@ -148,13 +229,16 @@ history = customer_df[
     ]
 ].sort_values("created_date")
 
+
 st.dataframe(
     history,
     use_container_width=True,
     hide_index=True
 )
 
+
 st.divider()
+
 
 # --------------------------------------------------
 # Risk Assessment
@@ -162,7 +246,9 @@ st.divider()
 
 st.subheader("🚨 Current Risk Assessment")
 
+
 left, right = st.columns([1, 2])
+
 
 with left:
 
@@ -175,6 +261,7 @@ with left:
         "Priority Score",
         int(customer["priority_score"])
     )
+
 
 with right:
 
@@ -192,7 +279,9 @@ with right:
 """
     )
 
+
 st.divider()
+
 
 # --------------------------------------------------
 # Journey Summary
@@ -200,11 +289,22 @@ st.divider()
 
 st.subheader("📌 Journey Summary")
 
-resolved = (customer_df["status"] == "Resolved").sum()
-unresolved = customer_df["is_unresolved"].sum()
-escalated = customer_df["is_escalated"].sum()
 
-st.success(f"""
+resolved = (
+    customer_df["status"] == "Resolved"
+).sum()
+
+unresolved = (
+    customer_df["is_unresolved"]
+).sum()
+
+escalated = (
+    customer_df["is_escalated"]
+).sum()
+
+
+st.success(
+    f"""
 ### Customer Overview
 
 - Total Complaints : **{customer['complaint_count']}**
@@ -217,4 +317,5 @@ st.success(f"""
 ### Recommendation
 
 **{customer['recommended_action']}**
-""")
+"""
+)

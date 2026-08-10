@@ -10,6 +10,7 @@ random.seed(42)
 # ----------------------------
 # Configuration
 # ----------------------------
+
 NUM_CUSTOMERS = 500
 NUM_TICKETS = 2000
 
@@ -40,7 +41,6 @@ CANCEL_REASONS = [
 # ----------------------------
 
 customers = []
-
 customer_ids = []
 
 for i in range(1, NUM_CUSTOMERS + 1):
@@ -68,10 +68,9 @@ customers_df = pd.DataFrame(customers)
 # ----------------------------
 
 tickets = []
-
 ticket_ids = []
 
-start_date = datetime(2025, 1, 1)
+start_date = datetime(2026, 1, 1)
 
 for i in range(1, NUM_TICKETS + 1):
 
@@ -93,11 +92,25 @@ for i in range(1, NUM_TICKETS + 1):
 
     resolved = None
 
+    # Resolution time
     if status == "Resolved":
 
         resolution_days = random.randint(1, 10)
 
-        resolved = created + timedelta(days=resolution_days)
+        resolved = created + timedelta(
+            days=resolution_days
+        )
+
+    else:
+
+        # For unresolved tickets, calculate how long
+        # the ticket has remained unresolved.
+        current_date = datetime(2026, 7, 1)
+
+        resolution_days = max(
+            1,
+            (current_date - created).days
+        )
 
     tickets.append({
 
@@ -111,7 +124,13 @@ for i in range(1, NUM_TICKETS + 1):
 
         "created_date": created.date(),
 
-        "resolved_date": resolved
+        "resolved_date": (
+            resolved.date()
+            if resolved
+            else None
+        ),
+
+        "resolution_days": resolution_days
 
     })
 
@@ -152,7 +171,9 @@ for row in tickets:
 
             "escalated": "Yes",
 
-            "escalation_level": random.choice(level_choices)
+            "escalation_level": random.choice(
+                level_choices
+            )
 
         })
 
@@ -164,7 +185,10 @@ escalations_df = pd.DataFrame(escalations)
 # Generate Cancellations
 # ----------------------------
 
-cancelled_customers = random.sample(customer_ids, 100)
+cancelled_customers = random.sample(
+    customer_ids,
+    100
+)
 
 cancellations = []
 
@@ -187,10 +211,16 @@ for cid in cancelled_customers:
 
     })
 
-cancellations_df = pd.DataFrame(cancellations)
+cancellations_df = pd.DataFrame(
+    cancellations
+)
+
+# Mark cancelled customers
 
 customers_df.loc[
-    customers_df.customer_id.isin(cancelled_customers),
+    customers_df.customer_id.isin(
+        cancelled_customers
+    ),
     "subscription_status"
 ] = "Cancelled"
 
@@ -198,17 +228,39 @@ customers_df.loc[
 # Save CSV Files
 # ----------------------------
 
-customers_df.to_csv("data/customers.csv", index=False)
+customers_df.to_csv(
+    "data/customers.csv",
+    index=False
+)
 
-tickets_df.to_csv("data/tickets.csv", index=False)
+tickets_df.to_csv(
+    "data/tickets.csv",
+    index=False
+)
 
-escalations_df.to_csv("data/escalations.csv", index=False)
+escalations_df.to_csv(
+    "data/escalations.csv",
+    index=False
+)
 
-cancellations_df.to_csv("data/cancellations.csv", index=False)
+cancellations_df.to_csv(
+    "data/cancellations.csv",
+    index=False
+)
 
-print("✅ Customers :", len(customers_df))
-print("✅ Tickets :", len(tickets_df))
-print("✅ Escalations :", len(escalations_df))
-print("✅ Cancellations :", len(cancellations_df))
+# ----------------------------
+# Print Results
+# ----------------------------
+
+print("Customers :", len(customers_df))
+print("Tickets :", len(tickets_df))
+print("Escalations :", len(escalations_df))
+print("Cancellations :", len(cancellations_df))
+
+print("\nTicket Status:")
+print(tickets_df["status"].value_counts())
+
+print("\nResolution Days:")
+print(tickets_df["resolution_days"].describe())
 
 print("\nDatasets generated successfully!")

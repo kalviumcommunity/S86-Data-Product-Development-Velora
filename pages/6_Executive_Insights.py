@@ -182,8 +182,38 @@ recommendations = pd.DataFrame({
     ]
 })
 
+
+# --------------------------------------------------
+# Color Entire Row Based on Priority
+# --------------------------------------------------
+
+def color_row(row):
+    if row["Priority"] == "High":
+        return [
+            "background-color: #ffcccc; color: #8b0000; font-weight: bold"
+        ] * len(row)
+
+    elif row["Priority"] == "Medium":
+        return [
+            "background-color: #fff0b3; color: #806000; font-weight: bold"
+        ] * len(row)
+
+    elif row["Priority"] == "Low":
+        return [
+            "background-color: #ccf2d6; color: #006b2e; font-weight: bold"
+        ] * len(row)
+
+    return [""] * len(row)
+
+
+styled_recommendations = recommendations.style.apply(
+    color_row,
+    axis=1
+)
+
+
 st.dataframe(
-    recommendations,
+    styled_recommendations,
     use_container_width=True,
     hide_index=True
 )
