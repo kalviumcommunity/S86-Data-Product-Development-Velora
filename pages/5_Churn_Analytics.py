@@ -189,6 +189,10 @@ st.divider()
 # Churned Customers Table
 # --------------------------------------------------
 
+# --------------------------------------------------
+# Churned Customers Table
+# --------------------------------------------------
+
 st.subheader("📋 Churned Customers")
 
 table = df[df["churned"]][[
@@ -201,8 +205,26 @@ table = df[df["churned"]][[
     "priority_level"
 ]].drop_duplicates()
 
+
+# Color priority levels
+def color_priority(value):
+    if value == "High":
+        return "background-color: #ffcccc; color: #b30000; font-weight: bold"
+    elif value == "Medium":
+        return "background-color: #fff0b3; color: #996600; font-weight: bold"
+    elif value == "Low":
+        return "background-color: #ccf2d6; color: #006b2e; font-weight: bold"
+    return ""
+
+
+styled_table = table.style.map(
+    color_priority,
+    subset=["priority_level"]
+)
+
+
 st.dataframe(
-    table,
+    styled_table,
     use_container_width=True,
     hide_index=True
 )

@@ -173,19 +173,55 @@ table = (
     .drop_duplicates("customer_id")
 )
 
+display_columns = [
+    "customer_id",
+    "customer_name",
+    "priority_level",
+    "priority_score",
+    "priority_reason",
+    "complaint_count",
+    "resolution_days",
+    "recommended_action"
+]
+
+
+def color_priority(row):
+    styles = [""] * len(row)
+
+    priority_index = row.index.get_loc("priority_level")
+
+    if row["priority_level"] == "High":
+        styles[priority_index] = (
+            "background-color: #ffcccc; "
+            "color: #b30000; "
+            "font-weight: bold"
+        )
+
+    elif row["priority_level"] == "Medium":
+        styles[priority_index] = (
+            "background-color: #fff0b3; "
+            "color: #996600; "
+            "font-weight: bold"
+        )
+
+    elif row["priority_level"] == "Low":
+        styles[priority_index] = (
+            "background-color: #ccffcc; "
+            "color: #006600; "
+            "font-weight: bold"
+        )
+
+    return styles
+
+
+styled_table = (
+    table[display_columns]
+    .style
+    .apply(color_priority, axis=1)
+)
+
 st.dataframe(
-    table[
-        [
-            "customer_id",
-            "customer_name",
-            "priority_level",
-            "priority_score",
-            "priority_reason",
-            "complaint_count",
-            "resolution_days",
-            "recommended_action"
-        ]
-    ],
+    styled_table,
     use_container_width=True,
     hide_index=True
 )
