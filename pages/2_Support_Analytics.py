@@ -152,7 +152,9 @@ st.divider()
 
 st.subheader("⏰ Delayed Tickets")
 
-delayed = df[df["resolution_days"] > 7][[
+delayed = df[
+    df["resolution_days"] > 7
+][[
     "ticket_id",
     "customer_id",
     "customer_name",
@@ -161,11 +163,49 @@ delayed = df[df["resolution_days"] > 7][[
     "status"
 ]]
 
+
+# --------------------------------------------------
+# Color Rows Based on Status
+# --------------------------------------------------
+
+def color_delayed_row(row):
+
+    if row["status"] == "Resolved":
+        return [
+            "background-color: #ccf2d6; "
+            "color: #006b2e; "
+            "font-weight: bold"
+        ] * len(row)
+
+    elif row["status"] == "Open":
+        return [
+            "background-color: #fff0b3; "
+            "color: #806000; "
+            "font-weight: bold"
+        ] * len(row)
+
+    elif row["status"] == "Pending":
+        return [
+            "background-color: #ffcccc; "
+            "color: #8b0000; "
+            "font-weight: bold"
+        ] * len(row)
+
+    return [""] * len(row)
+
+
+styled_delayed = delayed.style.apply(
+    color_delayed_row,
+    axis=1
+)
+
+
 st.dataframe(
-    delayed,
+    styled_delayed,
     use_container_width=True,
     hide_index=True
 )
+
 
 # --------------------------------------------------
 # Escalated Tickets
@@ -173,7 +213,9 @@ st.dataframe(
 
 st.subheader("🚨 Escalated Tickets")
 
-escalated = df[df["is_escalated"]][[
+escalated = df[
+    df["is_escalated"]
+][[
     "ticket_id",
     "customer_id",
     "customer_name",
@@ -182,13 +224,44 @@ escalated = df[df["is_escalated"]][[
     "status"
 ]]
 
+
+def color_escalated_row(row):
+
+    if row["escalation_level"] == "L3":
+        return [
+            "background-color: #ffcccc; "
+            "color: #8b0000; "
+            "font-weight: bold"
+        ] * len(row)
+
+    elif row["escalation_level"] == "L2":
+        return [
+            "background-color: #fff0b3; "
+            "color: #806000; "
+            "font-weight: bold"
+        ] * len(row)
+
+    elif row["escalation_level"] == "L1":
+        return [
+            "background-color: #ccf2d6; "
+            "color: #006b2e; "
+            "font-weight: bold"
+        ] * len(row)
+
+    return [""] * len(row)
+
+
+styled_escalated = escalated.style.apply(
+    color_escalated_row,
+    axis=1
+)
+
+
 st.dataframe(
-    escalated,
+    styled_escalated,
     use_container_width=True,
     hide_index=True
 )
-
-st.divider()
 
 # --------------------------------------------------
 # Business Insights

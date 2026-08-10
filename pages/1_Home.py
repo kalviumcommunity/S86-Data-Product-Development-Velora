@@ -161,11 +161,47 @@ columns = [
     "segment"
 ]
 
-st.dataframe(
+table = (
     high_risk[columns]
     .drop_duplicates()
-    .head(20),
-    use_container_width=True
+    .head(20)
+)
+
+
+# --------------------------------------------------
+# Color Status Rows
+# --------------------------------------------------
+
+def color_status(row):
+
+    if row["status"] == "Resolved":
+        return [
+            "background-color: #ccf2d6; color: #006b2e; font-weight: bold"
+        ] * len(row)
+
+    elif row["status"] == "Pending":
+        return [
+            "background-color: #fff0b3; color: #806000; font-weight: bold"
+        ] * len(row)
+
+    elif row["status"] == "Open":
+        return [
+            "background-color: #ffcccc; color: #8b0000; font-weight: bold"
+        ] * len(row)
+
+    return [""] * len(row)
+
+
+styled_table = table.style.apply(
+    color_status,
+    axis=1
+)
+
+
+st.dataframe(
+    styled_table,
+    use_container_width=True,
+    hide_index=True
 )
 
 # --------------------------------------------------
