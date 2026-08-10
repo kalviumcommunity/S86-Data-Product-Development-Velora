@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 import pandas as pd
+import streamlit as st
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
@@ -10,21 +11,43 @@ DB_PATH = BASE_DIR / "database" / "velora.db"
 
 def load_data():
 
-    connection = sqlite3.connect(DB_PATH)
+    # --------------------------------------------------
+    # Use uploaded CSV if available
+    # --------------------------------------------------
 
-    query = """
-        SELECT *
-        FROM master_dataset
-    """
-
-    df = pd.read_sql_query(
-        query,
-        connection
+    uploaded_data = st.session_state.get(
+        "uploaded_data",
+        None
     )
 
-    connection.close()
+    if uploaded_data is not None:
 
-    # Convert date columns
+        df = uploaded_data.copy()
+
+    else:
+
+        # --------------------------------------------------
+        # Use built-in SQLite dataset
+        # --------------------------------------------------
+
+        connection = sqlite3.connect(
+            DB_PATH
+        )
+
+        df = pd.read_sql_query(
+            """
+            SELECT *
+            FROM master_dataset
+            """,
+            connection
+        )
+
+        connection.close()
+
+    # --------------------------------------------------
+    # Convert dates
+    # --------------------------------------------------
+
     df["created_date"] = pd.to_datetime(
         df["created_date"]
     )
@@ -33,7 +56,10 @@ def load_data():
         df["resolved_date"]
     )
 
-    # Convert SQLite 0/1 values back to Boolean
+    # --------------------------------------------------
+    # Convert Boolean columns
+    # --------------------------------------------------
+
     boolean_columns = [
         "is_unresolved",
         "is_escalated",
@@ -42,7 +68,10 @@ def load_data():
     ]
 
     for column in boolean_columns:
+
         if column in df.columns:
-            df[column] = df[column].astype(bool)
+
+            if df[column].dtype != bool:
+                df[column] = df[column].astype(bool)
 
     return df
