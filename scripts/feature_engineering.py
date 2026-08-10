@@ -53,11 +53,32 @@ df["resolved_date"] = pd.to_datetime(df["resolved_date"])
 # Resolution Days
 # ==========================================================
 
+df["created_date"] = pd.to_datetime(df["created_date"])
+df["resolved_date"] = pd.to_datetime(df["resolved_date"])
+
+current_date = pd.Timestamp("2026-07-01")
+
 df["resolution_days"] = (
     df["resolved_date"] - df["created_date"]
 ).dt.days
 
-df["resolution_days"] = df["resolution_days"].fillna(0)
+# For unresolved tickets, calculate how long
+# they have remained unresolved.
+df.loc[
+    df["resolution_days"].isna(),
+    "resolution_days"
+] = (
+    current_date - df.loc[
+        df["resolution_days"].isna(),
+        "created_date"
+    ]
+).dt.days
+
+df["resolution_days"] = (
+    df["resolution_days"]
+    .clip(lower=0)
+    .astype(int)
+)
 
 # ==========================================================
 # Flags
